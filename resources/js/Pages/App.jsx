@@ -1,6 +1,6 @@
 import { Head, router } from "@inertiajs/react";
-import { useEffect, useState } from "react";
-import { motion, useMotionValue } from "motion/react";
+import { useEffect, useState, useRef } from "react";
+import { motion, useMotionValue, MotionConfig, correctParentTransform  } from "motion/react";
 
 function loadImage(file) {
     return new Promise((resolve) => {
@@ -94,6 +94,8 @@ async function applyEffects(file, effects) {
 export default function App({ stickers: initialStickers }) {
     const canvasX = useMotionValue(0);
     const canvasY = useMotionValue(0);
+    const canvasScale = useMotionValue(1);
+    const canvasRef = useRef(null);
 
     const [stickers, setStickers] = useState(initialStickers);
 
@@ -133,6 +135,22 @@ export default function App({ stickers: initialStickers }) {
         });
     }
 
+    function handleWheel(e) {
+        e.preventDefault();
+
+        const oldScale = canvasScale.get();
+        const newScale = Math.min(Math.max(oldScale + e.deltaY * -0.001, 0.1), 3);
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        const scaleRatio = newScale / oldScale;
+
+        canvasX.set(mouseX - scaleRatio * (mouseX - canvasX.get()));
+        canvasY.set(mouseY - scaleRatio * (mouseY - canvasY.get()));
+
+        canvasScale.set(newScale);
+    }
+
     const randomRotation = () => {
         const value = Math.floor(Math.random() * 5) + 4;
 
@@ -170,13 +188,17 @@ export default function App({ stickers: initialStickers }) {
             <h1 className="sro">Stickers</h1>
 
             <motion.div
+                ref={canvasRef}
                 className="canvas"
                 drag
                 dragMomentum={false}
-                style={{ x: canvasX, y: canvasY, cursor: 'grab' }}
+                style={{ x: canvasX, y: canvasY, scale: canvasScale, cursor: 'grab' }}
                 whileDrag={{ cursor: 'grabbing' }}
+                onWheel={handleWheel}
             >
-                {imageTags}
+                <MotionConfig transformPagePoint={correctParentTransform(canvasRef)}>
+                    {imageTags}
+                </MotionConfig>
             </motion.div>
 
             <label className="btn">
