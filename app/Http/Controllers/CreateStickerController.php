@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Models\Sticker;
 
 class CreateStickerController extends Controller
 {
@@ -13,8 +14,10 @@ class CreateStickerController extends Controller
 
         $request->image->storeAs('stickers', $filename, 'public');
 
-        return to_route('app', [
-            'image' => 'stickers/'.$filename,
+        Sticker::query()->create([
+            'src' => '/storage/stickers/'.$filename,
         ]);
+
+        return to_route('app');
     }
 }

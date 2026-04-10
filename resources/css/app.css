@@ -61,9 +61,7 @@ table {
 
 :root {
     font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    background-image: radial-gradient(#f2f2f2 10%, transparent 10%);
-    background-position: 10px 10px;
-    background-size: 20px 20px;
+    overflow: hidden;
 }
 
 .btn {
@@ -80,6 +78,7 @@ table {
     backdrop-filter: blur(25px);
     cursor: pointer;
     transition: background 100ms ease-out, transform 100ms ease-out;
+    z-index: 10;
 }
 
 .btn:hover {
@@ -93,11 +92,22 @@ table {
 .sticker {
     position: absolute;
     width: 15rem;
-    height: 15rem;
-    object-fit: contain;
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, .25));
+    transform-origin: center;
 }
 
 .sticker:hover {
     cursor: grab;
+}
+
+.canvas {
+    position: absolute;
+    width: 200000px;
+    height: 200000px;
+    left: -100000px;
+    top: -100000px;
+    cursor: grab;
+    background-image: radial-gradient(#f2f2f2 10%, transparent 10%);
+    background-position: 10px 10px;
+    background-size: 20px 20px;
 }

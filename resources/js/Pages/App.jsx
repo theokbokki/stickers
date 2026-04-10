@@ -1,5 +1,6 @@
 import { Head, router } from "@inertiajs/react";
-import { motion } from "motion/react"
+import { useEffect, useState } from "react";
+import { motion, useMotionValue } from "motion/react";
 
 function loadImage(file) {
     return new Promise((resolve) => {
@@ -25,21 +26,17 @@ function canvasToFile(canvas, filename) {
     });
 }
 
-function resizeImage(maxSize = 800) {
+function resizeImage(size = 800) {
     return async (file) => {
         const img = await loadImage(file);
         let { width, height } = img;
 
-        if (width <= maxSize && height <= maxSize) {
-            return file;
-        }
-
         if (width > height) {
-            height = (height * maxSize) / width;
-            width = maxSize;
+            height = (height * size) / width;
+            width = size;
         } else {
-            width = (width * maxSize) / height;
-            height = maxSize;
+            width = (width * size) / height;
+            height = size;
         }
 
         const canvas = document.createElement("canvas");
@@ -52,7 +49,7 @@ function resizeImage(maxSize = 800) {
     };
 }
 
-function addBorder(borderSize = 10, borderColor = "white") {
+function addBorder(borderSize = 20, borderColor = "white") {
     return async (file) => {
         const img = await loadImage(file);
         const w = img.width + borderSize * 2;
@@ -94,7 +91,31 @@ async function applyEffects(file, effects) {
     return result;
 }
 
-export default function App({ images }) {
+export default function App({ stickers: initialStickers }) {
+    const canvasX = useMotionValue(0);
+    const canvasY = useMotionValue(0);
+
+    const [stickers, setStickers] = useState(initialStickers);
+
+    useEffect(() => {
+        const sticker = initialStickers.find(s => s.x === null && s.y === null);
+
+        if (!sticker) {
+            setStickers(initialStickers);
+
+            return;
+        }
+
+        const x = 100000 - canvasX.get() + window.innerWidth / 2 - 120;
+        const y = 100000 - canvasY.get() + window.innerHeight / 2 - 120;
+
+        setStickers(initialStickers.map(s =>
+            s.id === sticker.id ? { ...s, x, y } : s
+        ));
+
+        router.post(`/stickers/${sticker.id}`, { x, y }, { preserveScroll: true });
+    }, [initialStickers]);
+
     async function handleFileChange(e) {
         const file = e.target.files[0];
 
@@ -103,11 +124,11 @@ export default function App({ images }) {
         }
 
         const sticker = await applyEffects(file, [
-            resizeImage(800),
-            addBorder(10, "white"),
+            resizeImage(),
+            addBorder(),
         ]);
 
-        router.post("/create-sticker", { image: sticker }, {
+        router.post("/stickers/create", { image: sticker }, {
             forceFormData: true,
         });
     }
@@ -118,18 +139,27 @@ export default function App({ images }) {
         return Math.random() < 0.5 ? value : -value;
     };
 
-    const imageTags = images.map(image =>
+    const imageTags = stickers.map(sticker =>
         <motion.img
-            src={'storage/'+image}
+            key={sticker.id}
+            src={sticker.src}
             alt=""
             className="sticker"
+            style={{ x: sticker.x ?? 0, y: sticker.y ?? 0 }}
             drag
             dragMomentum={false}
+            onPointerDown={(e) => e.stopPropagation()}
             whileDrag={{
                 scale: 1.15,
                 filter: "drop-shadow(0 0 16px rgba(0, 0, 0, .15))",
                 rotate: randomRotation(),
                 cursor: "grabbing",
+            }}
+            onDragEnd={(event, info) => {
+                router.post(`/stickers/${sticker.id}`, {
+                    x: (sticker.x ?? 0) + info.offset.x,
+                    y: (sticker.y ?? 0) + info.offset.y,
+                }, { preserveScroll: true });
             }}
         />
     );
@@ -138,6 +168,16 @@ export default function App({ images }) {
         <>
             <Head title="Stickers app" />
             <h1 className="sro">Stickers</h1>
+
+            <motion.div
+                className="canvas"
+                drag
+                dragMomentum={false}
+                style={{ x: canvasX, y: canvasY, cursor: 'grab' }}
+                whileDrag={{ cursor: 'grabbing' }}
+            >
+                {imageTags}
+            </motion.div>
 
             <label className="btn">
                 <span>Add sticker</span>
@@ -148,8 +188,6 @@ export default function App({ images }) {
                     className="sro"
                 />
             </label>
-
-            { imageTags }
         </>
     );
 }
