@@ -11,10 +11,10 @@ class CreateStickerController extends Controller
     {
         $filename = Str::uuid().'.webp';
 
-        $request->image->storeAs('images', $filename, 'public');
+        $request->image->storeAs('stickers', $filename, 'public');
 
         return to_route('app', [
-            'image' => 'images/'.$filename,
+            'image' => 'stickers/'.$filename,
         ]);
     }
 }

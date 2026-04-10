@@ -1,4 +1,5 @@
 import { Head, router } from "@inertiajs/react";
+import { motion } from "motion/react"
 
 function loadImage(file) {
     return new Promise((resolve) => {
@@ -93,7 +94,7 @@ async function applyEffects(file, effects) {
     return result;
 }
 
-export default function App({ image }) {
+export default function App({ images }) {
     async function handleFileChange(e) {
         const file = e.target.files[0];
 
@@ -111,6 +112,28 @@ export default function App({ image }) {
         });
     }
 
+    const randomRotation = () => {
+        const value = Math.floor(Math.random() * 5) + 4;
+
+        return Math.random() < 0.5 ? value : -value;
+    };
+
+    const imageTags = images.map(image =>
+        <motion.img
+            src={'storage/'+image}
+            alt=""
+            className="sticker"
+            drag
+            dragMomentum={false}
+            whileDrag={{
+                scale: 1.15,
+                filter: "drop-shadow(0 0 16px rgba(0, 0, 0, .15))",
+                rotate: randomRotation(),
+                cursor: "grabbing",
+            }}
+        />
+    );
+
     return (
         <>
             <Head title="Stickers app" />
@@ -125,6 +148,8 @@ export default function App({ image }) {
                     className="sro"
                 />
             </label>
+
+            { imageTags }
         </>
     );
 }
