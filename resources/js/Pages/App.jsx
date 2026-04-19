@@ -118,6 +118,14 @@ export default function App({ stickers: initialStickers }) {
         router.post(`/stickers/${sticker.id}`, { x, y }, { preserveScroll: true });
     }, [initialStickers]);
 
+    useEffect(() => {
+        const el = canvasRef.current;
+        if (!el) return;
+
+        el.addEventListener('wheel', handleWheel, { passive: false });
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, []);
+
     async function handleFileChange(e) {
         const file = e.target.files[0];
 
@@ -185,6 +193,7 @@ export default function App({ stickers: initialStickers }) {
     return (
         <>
             <Head title="Stickers app" />
+            <div style={{ height: "30px", WebkitAppRegion: "drag" }}></div>
             <h1 className="sro">Stickers</h1>
 
             <motion.div
@@ -194,7 +203,6 @@ export default function App({ stickers: initialStickers }) {
                 dragMomentum={false}
                 style={{ x: canvasX, y: canvasY, scale: canvasScale, cursor: 'grab' }}
                 whileDrag={{ cursor: 'grabbing' }}
-                onWheel={handleWheel}
             >
                 <MotionConfig transformPagePoint={correctParentTransform(canvasRef)}>
                     {imageTags}
